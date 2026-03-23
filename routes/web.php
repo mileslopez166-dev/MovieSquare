@@ -239,6 +239,22 @@ if (! function_exists('watchedMovieData')) {
     }
 }
 
+if (! function_exists('favoriteMovieData')) {
+    function favoriteMovieData(\App\Models\User $user): array
+    {
+        $movies = movieCatalog();
+        $favoriteIds = collect($user->favorite_movies ?? [])
+            ->filter(fn ($movieId) => isset($movies[$movieId]))
+            ->values();
+
+        return [
+            'favoriteMovies' => $favoriteIds
+                ->map(fn ($movieId) => $movies[$movieId])
+                ->all(),
+        ];
+    }
+}
+
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('dashboard')
@@ -369,19 +385,57 @@ Route::middleware(['auth', 'nocache'])->group(function () {
         ]);
     })->name('movies.watch');
 
+    Route::post('/movies/{id}/favorite', function ($id) {
+        $user = auth()->user();
+        $movies = movieCatalog();
+
+        if (! isset($movies[$id])) {
+            return redirect()->route('movies.index');
+        }
+
+        if (! $user->has_paid) {
+            return redirect()->route('payment')
+                ->with('payment_notice', 'Favorites unlock after payment is active.');
+        }
+
+        $favorites = collect($user->favorite_movies ?? []);
+
+        if ($favorites->contains($id)) {
+            $favorites = $favorites->reject(fn ($movieId) => $movieId === $id)->values();
+        } else {
+            $favorites = $favorites->prepend($id)->unique()->take(18)->values();
+        }
+
+        $user->forceFill([
+            'favorite_movies' => $favorites->all(),
+        ])->save();
+
+        return back();
+    })->name('movies.favorite');
+
     Route::get('/movies/{id}', function ($id) {
         $movies = movieCatalog();
         $movie = $movies[$id] ?? $movies['real-steel'];
+        $user = auth()->user();
 
         return view('ms.movies.show', [
             'movie' => $movie,
             'movies' => array_values($movies),
+            'isFavorite' => in_array($movie['id'], $user->favorite_movies ?? []),
+            'hasPaid' => (bool) $user->has_paid,
         ]);
     })->name('movies.show');
 
     Route::get('/me', function () {
         return view('ms.profile', watchedMovieData(auth()->user()));
     })->name('me');
+
+    Route::get('/favorites', function () {
+        return view('ms.favorites', array_merge(
+            favoriteMovieData(auth()->user()),
+            ['hasPaid' => (bool) auth()->user()->has_paid]
+        ));
+    })->name('favorites');
 
     Route::get('/me/reviews', function () {
         return view('ms.profile-reviews', watchedMovieData(auth()->user()));
@@ -391,5 +445,18 @@ Route::middleware(['auth', 'nocache'])->group(function () {
         return view('ms.profile-settings', watchedMovieData(auth()->user()));
     })->name('me.settings');
 
-    Route::view('/payment', 'ms.payment')->name('payment');
+    Route::get('/payment', function () {
+        return view('ms.payment', [
+            'hasPaid' => (bool) auth()->user()->has_paid,
+            'favoriteCount' => count(auth()->user()->favorite_movies ?? []),
+        ]);
+    })->name('payment');
+
+    Route::post('/payment/activate', function () {
+        auth()->user()->forceFill([
+            'has_paid' => true,
+        ])->save();
+
+        return redirect()->route('payment')->with('payment_success', 'Payment activated. Favorites are now unlocked.');
+    })->name('payment.activate');
 });

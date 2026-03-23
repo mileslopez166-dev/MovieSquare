@@ -304,6 +304,13 @@
                     <span>Movies</span>
                 </a>
 
+                <a href="{{ route('favorites') }}" class="ms-nav-link {{ request()->routeIs('favorites') ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                        <path d="M12 17.3l-5.56 3.28 1.48-6.3L3 10.09l6.46-.55L12 3.6l2.54 5.94 6.46.55-4.92 4.19 1.48 6.3z"></path>
+                    </svg>
+                    <span>Favorites</span>
+                </a>
+
                 <a href="{{ route('me') }}" class="ms-nav-link {{ request()->routeIs('me') || request()->routeIs('me.*') ? 'is-active' : '' }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
                         <path d="M20 21a8 8 0 0 0-16 0"></path>

@@ -141,6 +141,22 @@
             color: #ffffff;
         }
 
+        .movie-button.favorite {
+            background: #fff7ed;
+            border-color: #fdba74;
+            color: #9a3412;
+        }
+
+        .movie-button.locked {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+
+        .movie-favorite-form {
+            margin: 0;
+        }
+
         .movie-section {
             padding: 24px;
             background: #ffffff;
@@ -380,6 +396,16 @@
                     <div class="movie-actions">
                         <a href="#movie-reviews" class="movie-button">Comments</a>
                         <a href="{{ route('movies.watch', $movie['id']) }}" class="movie-button primary">Watch now!</a>
+                        @if ($hasPaid)
+                            <form method="POST" action="{{ route('movies.favorite', $movie['id']) }}" class="movie-favorite-form">
+                                @csrf
+                                <button type="submit" class="movie-button favorite">
+                                    {{ $isFavorite ? 'Remove Favorite' : 'Add to Favorites' }}
+                                </button>
+                            </form>
+                        @else
+                            <a href="{{ route('payment') }}" class="movie-button locked">Unlock Favorites</a>
+                        @endif
                     </div>
                 </div>
             </div>

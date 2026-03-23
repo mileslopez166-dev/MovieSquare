@@ -21,7 +21,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'has_paid',
         'watched_movies',
+        'favorite_movies',
     ];
 
     /**
@@ -42,6 +44,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'has_paid' => 'boolean',
         'watched_movies' => 'array',
+        'favorite_movies' => 'array',
     ];
 }
